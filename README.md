@@ -1,0 +1,1 @@
+**This is my first discord bot project using node.js and discord.js.**
