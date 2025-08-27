@@ -1,13 +1,12 @@
-const OpenAI = require("openai");
+require('dotenv').config();
+const { HfInference } = require("@huggingface/inference");
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
+const hf = new HfInference(process.env.HF_API_KEY);
 
 async function askQuestion(question) {
     try {
-        const response = await openai.chat.completions.create({
-            model: "gpt-4",
+        const response = await hf.chatCompletion({
+            model: "mistralai/Mistral-7B-Instruct-v0.3", // free instruct model
             messages: [
                 { role: "system", content: "You are a helpful assistant." },
                 { role: "user", content: question }
@@ -15,10 +14,9 @@ async function askQuestion(question) {
             max_tokens: 300,
         });
 
-        console.log("💡 OpenAI response:", response); // debug log
         return response.choices[0].message.content.trim();
     } catch (error) {
-        console.error("❌ OpenAI request failed:", error.message);
+        console.error("❌ Hugging Face request failed:", error.message);
         return "⚠️ Sorry, I couldn't process your question.";
     }
 }

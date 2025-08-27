@@ -1,10 +1,10 @@
 const { SlashCommandBuilder } = require("discord.js");
-const { askQuestion } = require("../services/openai");
+const { askQuestion } = require("../services/huggingface");
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("ask")
-        .setDescription("Ask the AI a question")
+        .setDescription("Ask me a question")
         .addStringOption(option =>
             option.setName("question")
                 .setDescription("Your question here")

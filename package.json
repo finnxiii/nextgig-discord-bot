@@ -1,7 +1,8 @@
 {
   "name": "discord-bot",
   "version": "1.0.0",
-  "description": "**This is my first discord bot project using node.js and discord.js.**",
+  "type": "commonjs",
+  "description": "My first Discord bot project using Node.js, Discord.js, and Hugging Face Inference API.",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js",
@@ -20,10 +21,10 @@
   },
   "homepage": "https://github.com/finnxiii/discord-bot-project#readme",
   "dependencies": {
+    "@huggingface/inference": "^4.7.1",
     "discord.js": "^14.22.1",
     "dotenv": "^16.6.1",
-    "mongoose": "^8.18.0",
-    "openai": "^5.16.0"
+    "mongoose": "^8.18.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
