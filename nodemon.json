@@ -1,0 +1,13 @@
+{
+    "watch": [
+        "bot.js",
+        "commands/",
+        "events/",
+        "config/",
+        "models/"
+    ],
+    "ext": "js,json",
+    "ignore": [
+        "node_modules/"
+    ]
+}
