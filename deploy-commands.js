@@ -1,9 +1,19 @@
 require('dotenv').config();
-const { REST, Routes } = require('discord.js');
 const fs = require('fs');
+const path = require('path');
+const { REST, Routes } = require('discord.js');
+
+console.log("🚀 Starting deploy-commands.js");
+
+if (!process.env.BOT_TOKEN || !process.env.CLIENT_ID || !process.env.GUILD_ID) {
+    console.error("❌ Missing BOT_TOKEN, CLIENT_ID, or GUILD_ID in .env");
+    process.exit(1);
+}
+
 
 const commands = [];
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+const commandsPath = path.join(__dirname, 'commands');
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
 for (const file of commandFiles) {
     const command = require(`./commands/${file}`);
@@ -14,15 +24,15 @@ const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
 
 (async () => {
     try {
-        console.log('Started refreshing application (/) commands.');
+        console.log("📡 Registering commands with Discord API...");
 
         await rest.put(
-            Routes.applicationCommands(process.env.CLIENT_ID),
+            Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
             { body: commands },
         );
 
-        console.log('Successfully reloaded application (/) commands.');
+        console.log("✅ Successfully registered commands!");
     } catch (error) {
-        console.error(error);
+        console.error('❌ Error deploying commands:', error);
     }
 })();

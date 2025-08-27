@@ -15,34 +15,42 @@ const client = new Client({
     ]
 });
 
-// Load commands
+// Load commands safely
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, 'commands');
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+
+let commandFiles = [];
+if (fs.existsSync(commandsPath)) {
+    try {
+        commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+    } catch (err) {
+        console.error("❌ Failed to read commands directory:", err);
+    }
+} else {
+    console.warn("⚠️ Commands directory not found:", commandsPath);
+}
 
 for (const file of commandFiles) {
     try {
         const command = require(`./commands/${file}`);
         if (command?.data?.name) {
             client.commands.set(command.data.name, command);
-            console.log(`Loaded command: ${command.data.name}`);
+            console.log(`✅ Loaded command: ${command.data.name}`);
         } else {
-            console.warn(`Skipped ${file} (no valid command export)`);
+            console.warn(`⚠️ Skipped ${file} (no valid command export)`);
         }
-    } catch (err) {
-        console.error(`Error loading command ${file}:`, err);
+    } catch (error) {
+        console.error(`❌ Error loading command ${file}:`, error);
     }
 }
 
+console.log("🚀 bot.js started");
 // Interaction handler
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
     const command = client.commands.get(interaction.commandName);
-    if (!command) {
-        console.warn(`Unknown command: ${interaction.commandName}`);
-        return;
-    }
+    if (!command) return;
 
     try {
         await command.execute(interaction);
