@@ -2,9 +2,9 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
     discordId: { type: String, required: true, unique: true },
-    xp: { type: Number, default: 0 },
-    streak: { type: Number, default: 0 },
-    quizzesTaken: { type: Number, default: 0 }
-}, { timestamps: true });
+    keyword: { type: String, required: true },
+    location: { type: String, default: "remote" },
+    subscribedAt: { type: Date, default: Date.now }
+});
 
 module.exports = mongoose.model('User', userSchema);
