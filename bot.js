@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { Client, GatewayIntentBits, Collection } = require('discord.js');
 const connectDB = require('./config/config');
+const { startJobAlerts } = require('./services/scheduler');
 
 console.log("🔍 Starting bot...");
 
@@ -67,6 +68,7 @@ client.on('interactionCreate', async interaction => {
 // Ready event
 client.once("clientReady", () => {
     console.log(`🤖 Logged in as ${client.user.tag}`);
+    startJobAlerts(client);
 });
 
 // Main async function
