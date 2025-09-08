@@ -1,28 +1,29 @@
-const { SlashCommandBuilder, escapeBold } = require('discord.js');
-const User = require('../models/User');
+const { SlashCommandBuilder, MessageFlags } = require("discord.js");
+const User = require("../models/User");
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('subscribe')
-        .setDescription('Subscribe to daily job alerts')
+        .setName("subscribe")
+        .setDescription("Subscribe to job alerts")
         .addStringOption(option =>
-            option.setName('keyword')
-                .setDescription('Job title or keyword')
+            option.setName("keyword")
+                .setDescription("Job title or keyword")
                 .setRequired(true))
         .addStringOption(option =>
-            option.setName('location')
-                .setDescription('Location (city, state, or country)')
+            option.setName("location")
+                .setDescription("Location (city or country)")
                 .setRequired(false))
         .addStringOption(option =>
-            option.setName('frequency')
-                .setDescription('Alert frequency (daily, weekly)')
+            option.setName("frequency")
+                .setDescription("How often do you want alerts?")
                 .setRequired(false)
                 .addChoices(
-                    { name: 'Hourly', value: 'hourly' },
-                    { name: 'Daily', value: 'daily' },
-                    { name: 'Weekly', value: 'weekly' }
+                    { name: "Hourly", value: "hourly" },
+                    { name: "Daily", value: "daily" },
+                    { name: "Weekly", value: "weekly" }
                 )
         ),
+
     async execute(interaction) {
         const keyword = interaction.options.getString("keyword");
         const location = interaction.options.getString("location") || "remote";
@@ -36,16 +37,26 @@ module.exports = {
                 user.keyword = keyword;
                 user.location = location;
                 user.frequency = frequency;
-
                 await user.save();
-                await interaction.reply(`Your subscription has been updated to **${keyword} in ${location} (${frequency})**.`);
+
+                await interaction.reply({
+                    content: `🔄 Updated subscription: **${keyword} in ${location} (${frequency})**`,
+                    flags: MessageFlags.Ephemeral
+                });
             } else {
                 await User.create({ discordId, keyword, location, frequency });
-                await interaction.reply(`You have successfully subscribed to daily job alerts for **${keyword} in ${location}** (${frequency}).`);
+
+                await interaction.reply({
+                    content: `✅ Subscribed to job alerts for **${keyword} in ${location}** (${frequency})`,
+                    flags: MessageFlags.Ephemeral
+                });
             }
         } catch (error) {
-            console.error('Error subscribing user:', error);
-            await interaction.reply('Sorry, there was an error processing your subscription. Please try again later.');
+            console.error(error);
+            await interaction.reply({
+                content: "⚠️ Failed to save your subscription.",
+                flags: MessageFlags.Ephemeral
+            });
         }
     },
 };

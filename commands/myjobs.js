@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags } = require("discord.js");
 const User = require("../models/User");
 
 module.exports = {
@@ -12,13 +12,30 @@ module.exports = {
             const user = await User.findOne({ discordId });
 
             if (!user) {
-                return interaction.reply("You are not subscribed to any job alerts. Use `/subscribe` to set up a subscription.");
+                await interaction.reply({
+                    content: "ℹ️ You don’t have any saved job alerts. Use `/subscribe` first.",
+                    flags: MessageFlags.Ephemeral
+                });
+                return;
             }
 
-            await interaction.reply(`You are subscribed to daily job alerts for **${user.keyword} in ${user.location}**.`);
+            const msg = `
+📋 **Your Current Job Alert**
+- 🔑 Keyword: **${user.keyword}**
+- 🌍 Location: **${user.location}**
+- ⏰ Frequency: **${user.frequency}**
+      `;
+
+            await interaction.reply({
+                content: msg,
+                flags: MessageFlags.Ephemeral
+            });
         } catch (error) {
-            console.error("Error fetching user subscription:", error);
-            await interaction.reply("Sorry, there was an error fetching your subscription. Please try again later.");
+            console.error(error);
+            await interaction.reply({
+                content: "⚠️ Failed to fetch your job alerts.",
+                flags: MessageFlags.Ephemeral
+            });
         }
     },
 };

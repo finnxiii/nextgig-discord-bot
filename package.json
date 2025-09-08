@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node bot.js",
     "dev": "nodemon bot.js",
-    "deploy": "node deploy-commands.js"
+    "deploy": "node deploy-commands.js",
+    "web": "node server.js",
+    "dev:all": "concurrently \"nodemon bot.js\" \"nodemon server.js\""
   },
   "repository": {
     "type": "git",
@@ -25,10 +27,12 @@
     "axios": "^1.11.0",
     "discord.js": "^14.22.1",
     "dotenv": "^16.6.1",
+    "express": "^5.1.0",
     "mongoose": "^8.18.0",
     "node-cron": "^4.2.1"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "nodemon": "^3.1.10"
   }
 }

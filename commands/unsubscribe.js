@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags } = require("discord.js");
 const User = require("../models/User");
 
 module.exports = {
@@ -13,7 +13,10 @@ module.exports = {
             const user = await User.findOneAndDelete({ discordId });
 
             if (user) {
-                await interaction.reply("✅ You have unsubscribed from job alerts. A confirmation has been sent to your DMs.");
+                await interaction.reply({
+                    content: "✅ You have unsubscribed from job alerts. A confirmation has been sent to your DMs.",
+                    flags: MessageFlags.Ephemeral
+                });
 
                 // Try sending a DM confirmation
                 try {
@@ -23,11 +26,17 @@ module.exports = {
                     console.error(`❌ Failed to DM unsubscribe confirmation to ${discordId}:`, dmError.message);
                 }
             } else {
-                await interaction.reply("ℹ️ You were not subscribed to any job alerts.");
+                await interaction.reply({
+                    content: "ℹ️ You were not subscribed to any job alerts.",
+                    flags: MessageFlags.Ephemeral
+                });
             }
         } catch (error) {
             console.error(error);
-            await interaction.reply("⚠️ Failed to unsubscribe. Please try again later.");
+            await interaction.reply({
+                content: "⚠️ Failed to unsubscribe. Please try again later.",
+                flags: MessageFlags.Ephemeral
+            });
         }
     },
 };
