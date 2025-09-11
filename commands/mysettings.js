@@ -1,11 +1,10 @@
-const { SlashCommandBuilder } = require("discord.js");
-const { MessageFlags } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require("discord.js");
 const User = require("../models/User");
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("mysettings")
-        .setDescription("View your current job alert subscription settings"),
+        .setDescription("View your current job alert settings"),
 
     async execute(interaction) {
         const discordId = interaction.user.id;
@@ -13,33 +12,46 @@ module.exports = {
         try {
             const user = await User.findOne({ discordId });
 
-            if (user) {
-                const msg = `
-📋 **Your Job Alert Settings**
-- 🔑 Keyword: **${user.keyword}**
-- 🌍 Location: **${user.location}**
-- ⏰ Frequency: **${user.frequency}**
-- 📅 Subscribed At: ${user.subscribedAt.toLocaleDateString()}
-        `;
+            if (!user) {
+                const embed = new EmbedBuilder()
+                    .setTitle("My Job Alert Settings")
+                    .setDescription("You do not have any active job alert subscriptions. Use `/subscribe` to create one.")
+                    .setColor(0x5865F2);
 
-                // Send DM
-                try {
-                    const dm = await interaction.client.users.fetch(discordId);
-                    await dm.send(msg);
-                    await interaction.reply({
-                        content: "📨 I’ve sent your subscription details to your DM.",
-                        flags: MessageFlags.Ephemeral
-                    });
-                } catch (dmError) {
-                    console.error(`❌ Could not DM user ${discordId}:`, dmError.message);
-                    await interaction.reply("⚠️ I couldn’t DM you. Please enable DMs from server members.");
-                }
-            } else {
-                await interaction.reply({ content: "ℹ️ You don’t have an active job alert subscription. Use `/subscribe` to set one up.", ephemeral: true });
+                await interaction.reply({
+                    embeds: [embed],
+                    flags: MessageFlags.Ephemeral
+                });
+                return;
             }
+
+            // Build an embed card
+            const embed = new EmbedBuilder()
+                .setTitle("My Job Alert Settings")
+                .setColor(0x5865f2)
+                .addFields(
+                    { name: "Keyword", value: user.keyword || "N/A", inline: true },
+                    { name: "Location", value: user.location || "N/A", inline: true },
+                    { name: "Frequency", value: user.frequency || "N/A", inline: true },
+                )
+                .setFooter({ text: `Subscribed on ${user.subscribedAt.toLocaleDateString()}` });
+
+            await interaction.reply({
+                embeds: [embed],
+                flags: MessageFlags.Ephemeral
+            });
         } catch (error) {
             console.error(error);
-            await interaction.reply({ content: "⚠️ Failed to fetch your settings. Please try again later.", ephemeral: true });
+
+            const embed = new EmbedBuilder()
+                .setTitle("Error")
+                .setDescription("An error occurred while fetching your job alerts. Please try again later.")
+                .setColor(0xFF0000);
+
+            await interaction.reply({
+                embeds: [embed],
+                flags: MessageFlags.Ephemeral
+            });
         }
     },
 };

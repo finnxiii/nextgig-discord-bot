@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, MessageFlags } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require("discord.js");
 const User = require("../models/User");
 
 module.exports = {
@@ -11,30 +11,43 @@ module.exports = {
 
         try {
             const user = await User.findOneAndDelete({ discordId });
+            let embed;
 
             if (user) {
-                await interaction.reply({
-                    content: "✅ You have unsubscribed from job alerts. A confirmation has been sent to your DMs.",
-                    flags: MessageFlags.Ephemeral
-                });
+                embed = new EmbedBuilder()
+                    .setTitle("Unsubscribed")
+                    .setDescription("You have successfully unsubscribed from job alerts. You will no longer receive notifications.")
+                    .setColor(0xFF0000)
+                    .setFooter({ text: `Unsubscribed on ${new Date().toLocaleDateString()}` });
 
-                // Try sending a DM confirmation
-                try {
-                    const dm = await interaction.client.users.fetch(discordId);
-                    await dm.send("📭 You have successfully unsubscribed from job alerts. You will no longer receive notifications.");
-                } catch (dmError) {
-                    console.error(`❌ Failed to DM unsubscribe confirmation to ${discordId}:`, dmError.message);
-                }
+
             } else {
-                await interaction.reply({
-                    content: "ℹ️ You were not subscribed to any job alerts.",
-                    flags: MessageFlags.Ephemeral
-                });
+
+            }
+
+            // Reply ephemeral in-channel
+            await interaction.reply({
+                embeds: [embed],
+                flags: MessageFlags.Ephemeral
+            });
+
+            // Try sending a DM confirmation
+            try {
+                const dm = await interaction.client.users.fetch(discordId);
+                await dm.send({ embeds: [embed] });
+            } catch (dmError) {
+                console.error(`Failed to DM unsubscribe confirmation to ${discordId}:`, dmError.message);
             }
         } catch (error) {
             console.error(error);
+
+            const embed = new EmbedBuilder()
+                .setTitle("Error")
+                .setDescription("An error occurred while trying to unsubscribe. Please try again later.")
+                .setColor(0xFF0000);
+
             await interaction.reply({
-                content: "⚠️ Failed to unsubscribe. Please try again later.",
+                embeds: [embed],
                 flags: MessageFlags.Ephemeral
             });
         }

@@ -1,50 +1,103 @@
 const cron = require('node-cron');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const User = require('../models/User');
 const { searchJobs } = require('./jobsApi');
 
 function startJobAlerts(client) {
-    cron.schedule('0 * * * *', async () => {
-        console.log('Running daily job alert task...');
+    const isDev = process.env.NODE_ENV === "development";
 
-        try {
-            const users = await User.find();
-            console.log("📋 Subscribed users:", users.length);
+    // Development: run every minute
+    if (isDev) {
+        cron.schedule("* * * * *", async () => {
+            console.log("⏱️ Running DEV job alert task (every minute)...");
+            await processJobAlerts(client, "hourly");
+        });
+    } else {
+        // Production schedules
+        cron.schedule("0 * * * *", async () => {
+            await processJobAlerts(client, "hourly");
+        });
+        cron.schedule("0 9 * * *", async () => {
+            await processJobAlerts(client, "daily");
+        });
+        cron.schedule("0 9 * * 1", async () => {
+            await processJobAlerts(client, "weekly");
+        });
+    }
+}
 
-            for (const user of users) {
-                const now = new Date();
 
-                if (user.frequency === 'hourly' ||
-                    (user.frequency === 'daily' && now.getHours() === 9) || // 9AM daily
-                    (user.frequency === 'weekly' && now.getDay() === 1 && now.getHours() === 9) // 9AM every Monday
-                ) {
-                    console.log(`🔎 Sending jobs to ${user.discordId} (${user.frequency})`);
+async function processJobAlerts(client, frequency) {
+    console.log(`Running job alert task for ${frequency} users...`);
+    try {
+        const users = await User.find({ frequency });
 
-                    const jobs = await searchJobs(user.keyword, user.location);
-                    console.log("Jobs found:", jobs.length);
+        for (const user of users) {
+            const jobs = await searchJobs(user.keyword, user.location);
+            const dm = await client.users.fetch(user.discordId);
 
-                    try {
-                        const dm = await client.users.fetch(user.discordId);
+            if (jobs.length > 0) {
+                const jobsToShow = jobs.slice(0, 5);
 
-                        if (jobs.length > 0) {
-                            const message = jobs.slice(0, 3).map((job, idx) =>
-                                `**${idx + 1}. ${job.title}** at ${job.company}\n🌍 ${job.location}\n🔗 ${job.url}\n`
-                            ).join('\n');
+                const embed = new EmbedBuilder()
+                    .setTitle(`Job Alerts: ${user.keyword} in ${user.location}`)
+                    .setColor(0x5865f2)
+                    .setDescription(
+                        jobsToShow
+                            .map(
+                                (job, idx) =>
+                                    `**${idx + 1}. [${job.title.length > 200
+                                        ? job.title.slice(0, 197) + "..."
+                                        : job.title
+                                    }](${job.url})**\n${job.company} — ${job.location}`
+                            )
+                            .join("\n\n")
+                    )
+                    .setFooter({
+                        text: `NextGig • Showing ${jobsToShow.length} of ${jobs.length} results`,
+                    });
 
-                            await dm.send(`📢 Daily job alerts for **${user.keyword} in ${user.location}**:\n\n${message}`);
-                            console.log(`📨 Sent DM to ${user.discordId}`);
-                        } else {
-                            await dm.send("ℹ️ No new jobs found this time 👀");
-                            console.log(`📨 Sent no-job DM to ${user.discordId}`);
-                        }
-                    } catch (dmError) {
-                        console.error(`❌ Could not DM user ${user.discordId}:`, dmError.message);
-                    }
+                // Add "View More" button if more results available
+                const components = [];
+                if (jobs.length > 5) {
+                    const row = new ActionRowBuilder().addComponents(
+                        new ButtonBuilder()
+                            .setLabel("View More Jobs")
+                            .setStyle(ButtonStyle.Link)
+                            .setURL(
+                                `http://localhost:3000/jobs?keyword=${encodeURIComponent(
+                                    user.keyword
+                                )}&location=${encodeURIComponent(user.location)}`
+                            )
+                    );
+                    components.push(row);
                 }
+
+                try {
+                    await dm.send({
+                        content: "Here are your job alerts:",
+                        embeds: [embed],
+                        components,
+                    });
+                    console.log(`✅ Sent DM to ${user.discordId}`);
+                } catch (err) {
+                    console.error(`❌ Failed to send DM to ${user.discordId}:`, err);
+                }
+            } else {
+                const noJobsEmbed = new EmbedBuilder()
+                    .setTitle("Job Alerts")
+                    .setDescription("No new jobs found this time.")
+                    .setColor(0x5865f2);
+
+                await dm.send({
+                    content: "Here are your job alerts:",
+                    embeds: [noJobsEmbed],
+                });
             }
-        } catch (error) {
-            console.error(`❌ Error in daily job alert task:`, dmError.message);
         }
-    });
+    } catch (error) {
+        console.error("❌ Error in job alert task:", error.message);
+    }
 }
 
 module.exports = { startJobAlerts };

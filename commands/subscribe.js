@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, MessageFlags } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require("discord.js");
 const User = require("../models/User");
 
 module.exports = {
@@ -32,6 +32,7 @@ module.exports = {
 
         try {
             let user = await User.findOne({ discordId });
+            let embed;
 
             if (user) {
                 user.keyword = keyword;
@@ -39,22 +40,52 @@ module.exports = {
                 user.frequency = frequency;
                 await user.save();
 
-                await interaction.reply({
-                    content: `🔄 Updated subscription: **${keyword} in ${location} (${frequency})**`,
-                    flags: MessageFlags.Ephemeral
-                });
+                embed = new EmbedBuilder()
+                    .setTitle("Subscription Updated")
+                    .setColor(0x5865F2)
+                    .addFields(
+                        { name: "Keyword", value: user.keyword, inline: true },
+                        { name: "Location", value: user.location, inline: true },
+                        { name: "Frequency", value: user.frequency, inline: true },
+                    )
+                    .setFooter({ text: `Updated on ${new Date().toLocaleDateString()}` });
             } else {
-                await User.create({ discordId, keyword, location, frequency });
+                const newUser = await User.create({ discordId, keyword, location, frequency });
 
-                await interaction.reply({
-                    content: `✅ Subscribed to job alerts for **${keyword} in ${location}** (${frequency})`,
-                    flags: MessageFlags.Ephemeral
-                });
+                embed = new EmbedBuilder()
+                    .setTitle("Subscription Created")
+                    .setColor(0x5865F2)
+                    .addFields(
+                        { name: "Keyword", value: newUser.keyword, inline: true },
+                        { name: "Location", value: newUser.location, inline: true },
+                        { name: "Frequency", value: newUser.frequency, inline: true },
+                    )
+                    .setFooter({ text: `Subscribed on ${newUser.subscribedAt.toLocaleDateString()}` });
+            }
+
+            // Reply ephemeral in-channel
+            await interaction.reply({
+                embeds: [embed],
+                flags: MessageFlags.Ephemeral
+            });
+
+            // Try sending a DM confirmation
+            try {
+                const dmUser = await interaction.client.users.fetch(discordId);
+                await dmUser.send({ embeds: [embed] });
+            } catch (dmError) {
+                console.error(`Failed to DM subscription confirmation to ${discordId}:`, dmError.message);
             }
         } catch (error) {
             console.error(error);
+
+            const embed = new EmbedBuilder()
+                .setTitle("Error")
+                .setDescription("An error occurred while saving your subscription. Please try again later.")
+                .setColor(0xFF0000);
+
             await interaction.reply({
-                content: "⚠️ Failed to save your subscription.",
+                embeds: [embed],
                 flags: MessageFlags.Ephemeral
             });
         }

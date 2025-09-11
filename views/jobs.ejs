@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NextGig | Job Results for <%= keyword %></title>
+  <link rel="stylesheet" href="/style.css" />
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <img src="/assets/nextgig-logo.png" alt="NextGig Logo" class="logo" />
+      <span class="brand">NextGig</span>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="container">
+    <h1>Find Your Next Gig</h1>
+
+    <!-- Search Form -->
+    <form class="search-form" action="/jobs" method="get">
+      <input type="text" name="keyword" placeholder="Enter job title or keyword" value="<%= keyword %>" required />
+      <input type="text" name="location" placeholder="Enter location (optional)" value="<%= location %>" />
+      <button type="submit">Search</button>
+    </form>
+
+    <% if (jobs.length > 0) { %>
+      <h2>Jobs for "<%= keyword %>" in "<%= location %>"</h2>
+      <div class="jobs-grid">
+        <% jobs.forEach((job) => { %>
+          <div class="job-card">
+            <h3><a href="<%= job.url %>" target="_blank"><%= job.title %></a></h3>
+            <p>🏢 <%= job.company %><br/>🌍 <%= job.location %></p>
+          </div>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <p>⚠️ No jobs found for "<%= keyword %>" in "<%= location %>".</p>
+    <% } %>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>💼 Powered by NextGig – Your career starts here.</p>
+  </footer>
+</body>
+</html>
