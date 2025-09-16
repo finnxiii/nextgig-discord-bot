@@ -46,17 +46,14 @@ module.exports = {
             });
 
             const components = [];
+            const webUrl = process.env.WEB_URL || "http://localhost:3000";
 
             if (jobs.length > 5) {
                 const row = new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
                         .setLabel("View More Jobs")
                         .setStyle(ButtonStyle.Link)
-                        .setURL(
-                            `http://localhost:3000/jobs?keyword=${encodeURIComponent(
-                                keyword
-                            )}&location=${encodeURIComponent(location)}`
-                        )
+                        .setURL(`${webUrl}/jobs?keyword=${encodeURIComponent(keyword)}&location=${encodeURIComponent(location)}`)
                 );
                 components.push(row);
             }
