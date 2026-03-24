@@ -20,9 +20,11 @@ module.exports = {
                     .setColor(0xFF0000)
                     .setFooter({ text: `Unsubscribed on ${new Date().toLocaleDateString()}` });
 
-
             } else {
-
+                embed = new EmbedBuilder()
+                    .setTitle("No Active Subscription")
+                    .setDescription("You are not currently subscribed to job alerts.")
+                    .setColor(0x5865F2);
             }
 
             // Reply ephemeral in-channel
